@@ -8,7 +8,7 @@ var config = {
       default: 'arcade',
       arcade: {
         debug: false,
-        gravity: { y: 150 }
+        gravity: { y: 700 }
       }
     },
     scene: {
@@ -34,6 +34,8 @@ function create() {
     // set background
     const FLOOR_OFFSET_Y = 100
     scene.floor = scene.add.image(width/2, height - FLOOR_OFFSET_Y, 'floor').setDisplaySize(width, FLOOR_OFFSET_Y)
+    scene.physics.world.bounds.width = width
+    scene.physics.world.bounds.height = height - FLOOR_OFFSET_Y
 
     // initialize animations
     Animations.createAnims(scene)
@@ -43,18 +45,29 @@ function create() {
     scene.socket.on('currentPlayers', players => {
         Object.keys(players).forEach(id => {
             var player = players[id]
+            var sprite = new Player(scene, player.x, player.y, player.id)
             if (player.id === scene.socket.id) {
-                scene.player = new Player(scene, player.x, player.y, player.id)
+                scene.player = sprite
+                console.log("My ID: ", scene.socket.id)
             } else {
-                scene.players.push(player)
+                scene.players.push(sprite)
             }
         })
     })
     scene.socket.on('newPlayer', player => {
         console.log("New Player: ", player)
+        var sprite = new Player(scene, player.x, player.y, player.id)
+        scene.players.push(sprite)
     })
     scene.socket.on('disconnect', id => {
-        console.log("Disconnected: ", scene.players[id])
+        console.log("Disconnected: ", id)
+        var index = findPlayerIndexWithId(scene.players, id)
+        if (index > -1) {
+            console.log('Deleting player: ', player)
+            var player = scene.players[index]
+            player.destroy()
+            scene.players.splice(index, 1)
+        }
     })
 
     scene.inputs = new Inputs(scene)
@@ -67,10 +80,26 @@ function update() {
             scene.player.moveRight(scene)
         } else if (scene.inputs.getIsLeftDown()) {
             scene.player.moveLeft(scene)
-        } else if (scene.inputs.getIsUpDown()) {
-            scene.player.jump(scene)
         } else {
             scene.player.stand(scene)
         }
+
+        if (scene.inputs.getIsUpDown()) {
+            scene.player.jump(scene)
+        }
     }
+
+    scene.players.forEach(player => {
+        player.stand(scene)
+    })
+}
+
+
+function findPlayerIndexWithId(players, id) {
+    for (let i = 0; i < players.length; ++i) {
+        if (players[i].getId() === id) {
+            return i
+        }
+    }
+    return -1
 }
