@@ -78,6 +78,12 @@ io.on('connection', function (socket) {
   socket.on('player_move_jump', (data) => {
     io.emit('player_move_jump', players[socket.id])
   })
+  socket.on('player_move_hit', (data) => {
+    io.emit('player_move_hit', players[socket.id])
+  })
+  socket.on('player_move_hitStop', (data) => {
+    io.emit('player_move_hitStop', players[socket.id])
+  })
   socket.on('sync_player', (data) => {
     data.id = socket.id
     io.emit('sync_player', data)

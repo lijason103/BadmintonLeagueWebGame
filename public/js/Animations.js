@@ -19,5 +19,11 @@ class Animations {
             frameRate: 10,
             repeat: -1
         })
+        scene.anims.create({
+            key: 'hit',
+            frames: scene.anims.generateFrameNumbers('player', { start: 50, end: 60 }),
+            frameRate: 10,
+            repeat: -1
+        })
     }
 }

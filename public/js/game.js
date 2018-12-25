@@ -81,6 +81,12 @@ function create() {
     scene.socket.on('player_move_jump', nPlayer => {
         updatePlayer(scene, nPlayer.id, player => player.jump(scene))
     })
+    scene.socket.on('player_move_hit', nPlayer => {
+        updatePlayer(scene, nPlayer.id, player => player.hit(scene))
+    })
+    scene.socket.on('player_move_hitStop', nPlayer => {
+        updatePlayer(scene, nPlayer.id, player => player.stopHit(scene))
+    })
     scene.socket.on('sync_player', nPlayer => {
         updatePlayer(scene, nPlayer.id, player => player.forceUpdate(nPlayer.x, nPlayer.y))
     })
@@ -118,6 +124,12 @@ function update(time, delta) {
 
     if (scene.inputs.getIsUpDown()) {
         scene.socket.emit('player_move_jump')
+    }
+
+    if (scene.inputs.getIsJDown()) {
+        scene.socket.emit('player_move_hit')
+    } else {
+        scene.socket.emit('player_move_hitStop')
     }
 
     scene.players.forEach(player => {
