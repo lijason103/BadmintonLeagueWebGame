@@ -8,7 +8,7 @@ var config = {
       default: 'arcade',
       arcade: {
         debug: false,
-        gravity: { y: 0 }
+        gravity: { y: 150 }
       }
     },
     scene: {
@@ -21,34 +21,56 @@ var config = {
 var game = new Phaser.Game(config);
 
 function preload() {
+    this.players = []   // other players
+    this.player = null  // my player
     this.load.image('floor', 'assets/floor.png')
+    this.load.spritesheet('player', 'assets/player.png', { frameWidth: 50, frameHeight: 37 })
 }
 
 function create() {
     var scene = this
-    var width = this.game.config.width
-    var height = this.game.config.height
+    var width = scene.game.config.width
+    var height = scene.game.config.height
     // set background
     const FLOOR_OFFSET_Y = 100
-    this.floor = scene.add.image(width/2, height - FLOOR_OFFSET_Y, 'floor').setDisplaySize(width, FLOOR_OFFSET_Y)
+    scene.floor = scene.add.image(width/2, height - FLOOR_OFFSET_Y, 'floor').setDisplaySize(width, FLOOR_OFFSET_Y)
 
-    this.socket = io();
-    this.socket.on('currentPlayers', players => {
-        console.log(players)
+    // initialize animations
+    Animations.createAnims(scene)
+
+    // initialize socket
+    scene.socket = io();
+    scene.socket.on('currentPlayers', players => {
         Object.keys(players).forEach(id => {
-            // if (players[id].id === this.socket.id) {
-                addPlayer(scene, players[id])
-            // }
+            var player = players[id]
+            if (player.id === scene.socket.id) {
+                scene.player = new Player(scene, player.x, player.y, player.id)
+            } else {
+                scene.players.push(player)
+            }
         })
     })
+    scene.socket.on('newPlayer', player => {
+        console.log("New Player: ", player)
+    })
+    scene.socket.on('disconnect', id => {
+        console.log("Disconnected: ", scene.players[id])
+    })
+
+    scene.inputs = new Inputs(scene)
 }
 
-function update() {}
-
-function addPlayer(scene, player) {
-    console.log(player)
-    var graphics = scene.add.graphics(0, 0)
-    graphics.fillStyle(0xFFFFFF, 1)
-    graphics.fillCircle(player.x, player.y, 10)
+function update() {
+    var scene = this
+    if (scene.player) {
+        if (scene.inputs.getIsRightDown()) {
+            scene.player.moveRight(scene)
+        } else if (scene.inputs.getIsLeftDown()) {
+            scene.player.moveLeft(scene)
+        } else if (scene.inputs.getIsUpDown()) {
+            scene.player.jump(scene)
+        } else {
+            scene.player.stand(scene)
+        }
+    }
 }
-
