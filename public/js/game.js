@@ -47,11 +47,9 @@ function create() {
             var player = players[id]
             var sprite = new Player(scene, player.x, player.y, player.id)
             if (player.id === scene.socket.id) {
-                scene.player = sprite
                 console.log("My ID: ", scene.socket.id)
-            } else {
-                scene.players.push(sprite)
             }
+            scene.players.push(sprite)
         })
     })
     scene.socket.on('newPlayer', player => {
@@ -70,27 +68,60 @@ function create() {
         }
     })
 
+    // Update other players
+    scene.socket.on('player_move_right', nPlayer => {
+        updatePlayer(scene, nPlayer.id, player => player.moveRight(scene))
+    })
+    scene.socket.on('player_move_left', nPlayer => {
+        updatePlayer(scene, nPlayer.id, player => player.moveLeft(scene))
+    })
+    scene.socket.on('player_move_stand', nPlayer => {
+        updatePlayer(scene, nPlayer.id, player => player.stand(scene))
+    })
+    scene.socket.on('player_move_jump', nPlayer => {
+        updatePlayer(scene, nPlayer.id, player => player.jump(scene))
+    })
+    scene.socket.on('sync_player', nPlayer => {
+        updatePlayer(scene, nPlayer.id, player => player.forceUpdate(nPlayer.x, nPlayer.y))
+    })
     scene.inputs = new Inputs(scene)
 }
 
-function update() {
-    var scene = this
-    if (scene.player) {
-        if (scene.inputs.getIsRightDown()) {
-            scene.player.moveRight(scene)
-        } else if (scene.inputs.getIsLeftDown()) {
-            scene.player.moveLeft(scene)
-        } else {
-            scene.player.stand(scene)
-        }
+function updatePlayer(scene, id, callback) {
+    var index = findPlayerIndexWithId(scene.players, id)
+    if (index > -1) {
+        var player = scene.players[index]
+        callback(player)
+    }
+}
 
-        if (scene.inputs.getIsUpDown()) {
-            scene.player.jump(scene)
+function update(time, delta) {
+    var scene = this
+
+    // TODO: this is bad. it should be handled by server but cheating is not
+    // a concern in this mini game
+    if (!scene.syncTimer || time - scene.syncTimer > 100) {
+        scene.syncTimer = time
+        var player = scene.players[findPlayerIndexWithId(scene.players, scene.socket.id)]
+        if (player) {
+            scene.socket.emit('sync_player', player.getPosition())
         }
     }
 
+    if (scene.inputs.getIsRightDown()) {
+        scene.socket.emit('player_move_right')
+    } else if (scene.inputs.getIsLeftDown()) {
+        scene.socket.emit('player_move_left')
+    } else {
+        scene.socket.emit('player_move_stand')
+    }
+
+    if (scene.inputs.getIsUpDown()) {
+        scene.socket.emit('player_move_jump')
+    }
+
     scene.players.forEach(player => {
-        player.stand(scene)
+        // player.stand(scene)
     })
 }
 

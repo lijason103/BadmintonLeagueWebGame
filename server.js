@@ -17,6 +17,7 @@ const CANVAS_HEIGHT = 500
 const GROUND_Y = 400
 const GROUND_X_LEFT_BOUND = 50
 const GROUND_X_RIGHT_BOUND = CANVAS_WIDTH - GROUND_X_LEFT_BOUND
+const VELOCITY = 300
 
 io.on('connection', function (socket) {
   console.log(`User Connected: ${socket.id}`)
@@ -57,20 +58,33 @@ io.on('connection', function (socket) {
   socket.broadcast.emit('newPlayer', players[socket.id])
 
   // Handle player disconnect
-  socket.on('disconnect', function () {
+  socket.on('disconnect', () => {
     console.log(`User Disconnected: ${socket.id}`)
     delete players[socket.id]
     io.emit('disconnect', socket.id)
   });
+
+  // Handle player movement
+  // TODO: physics detection at server-side but it's okay for now
+  socket.on('player_move_right', (data) => {
+    io.emit('player_move_right', players[socket.id])
+  })
+  socket.on('player_move_left', (data) => {
+    io.emit('player_move_left', players[socket.id])
+  })
+  socket.on('player_move_stand', (data) => {
+    io.emit('player_move_stand', players[socket.id])
+  })
+  socket.on('player_move_jump', (data) => {
+    io.emit('player_move_jump', players[socket.id])
+  })
+  socket.on('sync_player', (data) => {
+    data.id = socket.id
+    io.emit('sync_player', data)
+  })
+
 });
 
-server.listen(8081, function () {
+server.listen(8081, () => {
   console.log(`Listening on ${server.address().port}`);
 });
-
-
-// helpers
-// TODO: move this to another file
-function generateNumber(min, max) {
-  return Math.random() * (max - min) + min
-}

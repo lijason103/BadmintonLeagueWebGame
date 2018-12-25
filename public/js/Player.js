@@ -1,8 +1,6 @@
 // TODO: extends Phaser.Physics.Arcade.Sprite
 class Player {
     constructor(scene, x, y, id) {
-        this.x = x
-        this.y = y
         this.id = id
         this.velocity = 300
         this.sprite = scene.physics.add.sprite(x, y, 'player')
@@ -14,6 +12,13 @@ class Player {
 
     getId() {
         return this.id
+    }
+
+    getPosition() {
+        return {
+            x: this.sprite.x,
+            y: this.sprite.y
+        }
     }
 
     moveLeft(scene) {
@@ -46,6 +51,11 @@ class Player {
         if (this.getCurrentAnimKey() !== 'idle' && this.sprite.body.onFloor()) {
             scene.anims.play('idle', this.sprite)
         }
+    }
+
+    forceUpdate(x, y) {
+        this.sprite.x = x
+        this.sprite.y = y
     }
 
     getCurrentAnimKey() {
